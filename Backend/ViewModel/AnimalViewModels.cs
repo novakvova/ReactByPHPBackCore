@@ -11,4 +11,9 @@ namespace Backend.ViewModel
         public string Name { get; set; }
         public string Image { get; set; }
     }
+    public class AnimalAddViewModel
+    {
+        public string Name { get; set; }
+        public string Image { get; set; }
+    }
 }
