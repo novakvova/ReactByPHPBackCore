@@ -1,11 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Backend.DAL.Entities;
+using Backend.Helpers;
 using Backend.ViewModel;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 
 namespace Backend.Controllers
 {
@@ -27,9 +32,14 @@ namespace Backend.Controllers
         //        },
         //    };
         private readonly EFContext _context;
-        public AnimalController(EFContext context)
+        private readonly IConfiguration _configuration;
+        private readonly IHostingEnvironment _env;
+        public AnimalController(EFContext context, IHostingEnvironment env,
+            IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
+            _env = env;
         }
 
         // GET api/animal/search
@@ -58,6 +68,39 @@ namespace Backend.Controllers
                 Image = model.Image
             });
             _context.SaveChanges();
+            return Ok();
+        }
+
+        [HttpPost("add-base64")]
+        public IActionResult AddBase64([FromBody] AnimalAddViewModel model)
+        {
+            string imageName = Guid.NewGuid().ToString() + ".jpg";
+            string base64 = model.Image;
+            if (base64.Contains(","))
+            {
+                base64 = base64.Split(',')[1];
+            }
+
+            var bmp=base64.FromBase64StringToImage();
+            string fileDestDir = _env.ContentRootPath;
+            fileDestDir = Path.Combine(fileDestDir, _configuration.GetValue<string>("ImagesPath"));
+
+            string fileSave = Path.Combine(fileDestDir, imageName);
+            if(bmp!=null)
+            {
+                int size = 1200;
+                var image = ImageHelper.CompressImage(bmp, size, size);
+                image.Save(fileSave, ImageFormat.Jpeg);
+            }
+            //bmp.Save(fileSave);
+
+            //Random rand = new Random();
+            //_context.Animals.Add(new DbAnimal
+            //{
+            //    Name = model.Name,
+            //    Image = model.Image
+            //});
+            //_context.SaveChanges();
             return Ok();
         }
     }
